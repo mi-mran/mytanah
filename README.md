@@ -4,7 +4,7 @@ Life, Lands, Livelihood Enriched.
 
 ## Todo
 
-- [x] Added example project to check flashing and building
+- [x] Added example project to test building and flashing
 - [ ] Add example code for LoRa E32 transmitter and receiver (when adding code, please upload documentation of specific pinouts used)
 - [ ] Discuss network topology of transceiver system
 
@@ -24,6 +24,10 @@ Export IDF path (required every terminal session):
 
 	. ./export.sh
 	
+On Linux systems, you need to add your user to "dialout" permission group to access /dev/ttyUSB* port (only need to do once):
+
+	sudo usermod -a -G dialout <username>
+	
 ## Build and Flash Project
 
 Ensure that you have already setup the environment properly before building the project.
@@ -34,9 +38,9 @@ Build the project. "project/build" directory will be created/updated containing 
 	idf.py set-target esp32
 	idf.py build
 	
-Flash the project into ESP32-WROOM-32D. On some boards you may need to press boot button during "connecting ..."
+Flash the project into ESP32-WROOM-32D. On some boards you may need to press boot button during "connecting ...". Check your port number, may not be /dev/ttyUSB0 if you have more than 1 usb device connected.
 
-	idf.py flash
+	idf.py -p /dev/ttyUSB0 flash
 	
 To view logs:
 
