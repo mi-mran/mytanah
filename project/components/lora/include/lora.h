@@ -1,6 +1,21 @@
 #ifndef LORA_H_
 #define LORA_H_
 
+// Return Status
+
+typedef enum {
+	RET_SUCCESS = 0,
+	RET_ERROR_UNKNOWN,
+	RET_NOT_SUPPORT,
+  	RET_NOT_IMPLEMENT,
+  	RET_NOT_INITIAL,
+  	RET_INVALID_PARAM,
+  	RET_DATA_SIZE_NOT_MATCH,
+  	RET_BUF_TOO_SMALL,
+  	RET_TIMEOUT,
+  	RET_HW_ERROR,
+} RET_STATUS;
+
 // Operating Modes
 
 #define MODE_0_NORMAL			0 		// UART and wireless channel open, transparent transmission is on
@@ -15,9 +30,9 @@
 
 // SPED - UART parity bit (Bit 7, 6)
 
-#define 8_N1				0
-#define 8_O1				1
-#define 8_E1				2
+#define UART_PB_8N1				0
+#define UART_PB_8O1				1
+#define UART_PB_8E1				2
 
 // SPED - TTL UART baud rate (Bit 5, 4, 3)
 #define UART_1200			0
