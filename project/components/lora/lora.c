@@ -6,34 +6,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-
-#define M0_PIN		23
-#define M1_PIN		22
-#define AUX_PIN		21
-
-#define BUF_SIZE	2048
-#define TIME_OUT_CNT	100
-
-void Init() {
-	// GPIO pins
-	gpio_set_direction(M0_PIN, GPIO_MODE_OUTPUT);
-	gpio_set_direction(M1_PIN, GPIO_MODE_OUTPUT);
-	gpio_set_direction(AUX_PIN, GPIO_MODE_INPUT);
-
-	// UART pins
-	const int uart_num = UART_NUM_0;
-	uart_config_t uart_config = {
-		.baud_rate = 115200,
-		.data_bits = UART_DATA_8_BITS,
-		.parity = UART_PARITY_DISABLE,
-		.stop_bits = UART_STOP_BITS_1,
-		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,    
-		.rx_flow_ctrl_thresh = 122, 
-	};
-	uart_param_config(uart_num, &uart_config);
-	uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-	uart_driver_install(uart_num, BUF_SIZE, BUF_SIZE, 0, NULL, 0);
-}
+#include "esp_log.h"
 
 int ReadAUX() {
 	return gpio_get_level(AUX_PIN);
@@ -42,26 +15,30 @@ int ReadAUX() {
 RET_STATUS WaitAUX() {
 	uint8_t cnt = 0;
 	RET_STATUS status = RET_SUCCESS;
-
+	
 	while((ReadAUX()==0) && (cnt++<TIME_OUT_CNT)) {
 		vTaskDelay(100 / portTICK_RATE_MS);
-	}
+	}	
 
 	if (cnt >= TIME_OUT_CNT) {
 		printf("AUX Timeout\n");
 		status = RET_TIMEOUT;
 	}
 	else {
-		printf("AUX LOW\n");
+		printf("AUX HIGH\n");
 	}
 
 	return status;
 }
 
 void ChangeMode(int mode) {
+	/*
 	if(WaitAUX() != RET_SUCCESS) {
 		return;
 	}
+	*/
+
+	vTaskDelay(2 / portTICK_RATE_MS);	// wait 2ms after AUX outputs high
 
 	switch(mode) {
 		case MODE_0_NORMAL:
@@ -89,14 +66,18 @@ void ChangeMode(int mode) {
 			break;
 
 		default:
-			printf("Invalid mode\n")
+			printf("Invalid mode\n");
 			return;
 	}
 
-	WaitAUX();
+	//WaitAUX();
 }	
 
-
+int sendData(const char* logName, const char* data, int size) {
+	const int txBytes = uart_write_bytes(UART_NUM_2, data, size);
+	ESP_LOGI(logName, "Wrote %d bytes", txBytes);
+	return txBytes;
+}
 
 
 

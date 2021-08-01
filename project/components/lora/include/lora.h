@@ -125,5 +125,18 @@ typedef struct {
 #define	SHOW_VERSION	 		0xC3,		// C3+C3+C3: Show version info
 #define	RESET_MODULE			0xC4		// C4+C4+C4: Reset module
 
+// Misc
+
+#define M0_PIN          23
+#define M1_PIN          22
+#define AUX_PIN         21
+#define RX_BUF_SIZE     2048
+#define TIME_OUT_CNT    100
+
+// Function Prototypes
+
+void Init(void);
+void ChangeMode(int);
+int sendData(const char*, const char*, int);
 
 #endif
