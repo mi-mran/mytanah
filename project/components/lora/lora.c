@@ -32,11 +32,9 @@ RET_STATUS WaitAUX() {
 }
 
 void ChangeMode(int mode) {
-	/*
 	if(WaitAUX() != RET_SUCCESS) {
 		return;
 	}
-	*/
 
 	vTaskDelay(2 / portTICK_RATE_MS);	// wait 2ms after AUX outputs high
 
@@ -44,25 +42,25 @@ void ChangeMode(int mode) {
 		case MODE_0_NORMAL:
 			gpio_set_level(M0_PIN, 0);
 			gpio_set_level(M1_PIN, 0);
-			printf("Changed to Mode 0");
+			printf("Changed to Mode 0\n");
 			break;
 
 		case MODE_1_WAKE_UP:
 			gpio_set_level(M0_PIN, 1);
 			gpio_set_level(M1_PIN, 0);
-			printf("Changed to Mode 1");
+			printf("Changed to Mode 1\n");
 			break;
 
 		case MODE_2_PWR_SAVE:
 			gpio_set_level(M0_PIN, 0);
 			gpio_set_level(M1_PIN, 1);
-			printf("Changed to Mode 2");
+			printf("Changed to Mode 2\n");
 			break;
 
 		case MODE_3_SLEEP:
 			gpio_set_level(M0_PIN, 1);
 			gpio_set_level(M1_PIN, 1);
-			printf("Changed to Mode 3");
+			printf("Changed to Mode 3\n");
 			break;
 
 		default:
@@ -70,7 +68,7 @@ void ChangeMode(int mode) {
 			return;
 	}
 
-	//WaitAUX();
+	WaitAUX();
 }	
 
 int sendData(const char* logName, const char* data, int size) {

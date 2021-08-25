@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
@@ -17,7 +18,7 @@ void LoraTask(void *pvParameter) {
         // UART pins init
         const int uart_num = UART_NUM_2;
         uart_config_t uart_config = {
-                .baud_rate = 115200,
+                .baud_rate = 9600,
                 .data_bits = UART_DATA_8_BITS,
                 .parity = UART_PARITY_DISABLE,
                 .stop_bits = UART_STOP_BITS_1,
@@ -30,26 +31,34 @@ void LoraTask(void *pvParameter) {
 
         printf(" Init done\n");
 
+	ChangeMode(MODE_0_NORMAL);
+	vTaskDelay(2000 / portTICK_RATE_MS);
+	ChangeMode(MODE_1_WAKE_UP);
+	vTaskDelay(2000 / portTICK_RATE_MS);
 	ChangeMode(MODE_3_SLEEP);
-	vTaskDelay(200 / portTICK_RATE_MS);
+	vTaskDelay(2000 / portTICK_RATE_MS);
 
-	uint8_t *rxData = (uint8_t*) malloc(RX_BUF_SIZE+1);
+	//uint8_t *rxData = (uint8_t*) malloc(RX_BUF_SIZE+1);
+    uint8_t rxData[RX_BUF_SIZE+1];
 
 	while(1) {
-		char TX_data[] = {0xC1, 0xC1, 0xC1};
-		sendData(TAG, TX_data, sizeof(TX_data));
+        memset(rxData, 0, RX_BUF_SIZE+1);
+		uint8_t TX_data[] = {0xC1, 0xC1, 0xC1};
+		//uint8_t TX_data[] = {0x00, 0x00, 0x0F, 0xAA, 0xBB, 0xCC};
+		sendData(TAG, (const char *) TX_data, sizeof(TX_data));
 
 		const int rxBytes = uart_read_bytes(uart_num, rxData, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
 		if (rxBytes > 0) {
-			rxData[rxBytes] = 0;
-			printf("Read %d bytes: '%s'\n", rxBytes, rxData);
+            for (int i=0; i<=rxBytes; i++) {
+                printf("%x\r\n", rxData[i]);
+            }
+			//printf("Read %d bytes: %s\n", rxBytes, (char*)rxData);
 		}
 
 		vTaskDelay(5000 / portTICK_RATE_MS);
 	}
-	free(rxData);
 }
 
 void app_main(void) {
-	xTaskCreate(&LoraTask, "LoraTask", 2048, NULL, 1, NULL);
+	xTaskCreate(&LoraTask, "LoraTask", 8192, NULL, 1, NULL);
 }
