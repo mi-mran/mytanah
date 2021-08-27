@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include "lora.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
@@ -7,6 +8,14 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
+
+const int uart_num = UART_NUM_2;
+
+// Other Sleep mode commands
+uint8_t SHOW_CFG[] = {0xC1,0xC1,0xC1};	    	// C1+C1+C1: Show current parameter configuration 
+uint8_t	SHOW_VERSION[] = {0xC3,0xC3,0xC3};		// C3+C3+C3: Show version info
+uint8_t	RESET_MODULE[] = {0xC4,0xC4,0xC4};		// C4+C4+C4: Reset module
+
 
 void InitGPIO() {
 	// GPIO pins init
@@ -17,7 +26,6 @@ void InitGPIO() {
 
 void InitUART() {
     // UART pins init
-    const int uart_num = UART_NUM_2;
     uart_config_t uart_config = {
             .baud_rate = 9600,
             .data_bits = UART_DATA_8_BITS,
@@ -101,14 +109,13 @@ int SendData(const char* data, int size) {
 
 void CheckParams() {
     int rxBytes;
-    uint8_t data = {SHOW_CFG};
     uint8_t rxData[RX_BUF_SIZE+1];
 
-    SendData(data, sizeof(data));
+    SendData((const char*) SHOW_CFG, sizeof(SHOW_CFG));
     memset(rxData, 0, RX_BUF_SIZE+1);
     rxBytes = uart_read_bytes(uart_num, rxData, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
         if (rxBytes > 0) {
-            ESP_LOGI(TAG, "Read %d bytes", rxBytes);
+            ESP_LOGI("CheckParams", "Read %d bytes", rxBytes);
             for (int i=0; i<=rxBytes; i++) {
                 printf("%x\r\n", rxData[i]);
             }
@@ -117,14 +124,13 @@ void CheckParams() {
 
 void CheckVersion() {
     int rxBytes;
-    uint8_t data = {SHOW_VERSION};
     uint8_t rxData[RX_BUF_SIZE+1];
 
-    SendData(data, sizeof(data));
+    SendData((const char*) SHOW_VERSION, sizeof(SHOW_VERSION));
     memset(rxData, 0, RX_BUF_SIZE+1);
     rxBytes = uart_read_bytes(uart_num, rxData, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
         if (rxBytes > 0) {
-            ESP_LOGI(TAG, "Read %d bytes", rxBytes);
+            ESP_LOGI("CheckVersion", "Read %d bytes", rxBytes);
             for (int i=0; i<=rxBytes; i++) {
                 printf("%x\r\n", rxData[i]);
             }
@@ -132,9 +138,7 @@ void CheckVersion() {
 }
 
 void ResetModule() {
-    uint8_t data = {RESET_MODULE};
-
-    SendData(data, sizeof(data));
+    SendData((const char*) RESET_MODULE, sizeof(RESET_MODULE));
     WaitAUX();
     ESP_LOGI("RESET", "Module Reset");
 }

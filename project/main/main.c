@@ -9,9 +9,6 @@
 static const char *TAG = "LORA TASK";
 
 void LoraTask(void *pvParameter) {
-    int txBytes;
-    int rxBytes;
-
     InitGPIO();
     InitUART();
 

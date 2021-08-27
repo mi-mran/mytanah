@@ -119,12 +119,6 @@ typedef struct {
 
 #pragma pack(pop)
 
-// Other Sleep mode commands
-
-#define	SHOW_CFG 			    0xC1,0xC1,0xC1		// C1+C1+C1: Show current parameter configuration 
-#define	SHOW_VERSION	 		0xC3,0xC3,0xC3		// C3+C3+C3: Show version info
-#define	RESET_MODULE			0xC4,0xC4,0xC4		// C4+C4+C4: Reset module
-
 // Misc
 
 #define M0_PIN          23
@@ -135,9 +129,10 @@ typedef struct {
 
 // Function Prototypes
 
-void Init(void);
+void InitGPIO(void);
+void InitUART(void);
 void ChangeMode(int);
-int SendData(const char*, const char*, int);
+int SendData(const char*, int);
 void CheckParams(void);
 void CheckVersion(void);
 void ResetModule(void);
