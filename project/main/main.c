@@ -4,22 +4,38 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#include "esp_log.h"
 #include "lora.h"
 
 static const char *TAG = "LORA TASK";
 
 void LoraTask(void *pvParameter) {
+    uint8_t rxBuf[RX_BUF_SIZE+1];
+    size_t rxData_len;
+    int rxBytes;
+    uint8_t *txData = "Hello Device 2";
+
     InitGPIO();
     InitUART();
 
-	ChangeMode(MODE_0_NORMAL);
-	ChangeMode(MODE_3_SLEEP);
-
+    SetHead(CMD_CFG_SAVE);
+    SetAddrCh(0xAAAA, 0x0F);
+    
+    ChangeMode(MODE_3_SLEEP);
+    CheckParams();
+    UpdateParams();
+    ChangeMode(MODE_0_NORMAL);
+                
 	while(1) {
-        CheckParams();
-        CheckVersion();
-        ResetModule();
-		vTaskDelay(5000 / portTICK_RATE_MS);
+        uart_get_buffered_data_len(uart_num, &rxData_len);        
+        if (rxData_len > 0) {
+            rxBytes = uart_read_bytes(uart_num, rxBuf, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
+            for (int i=0; i<rxBytes-1; i++) {
+                ESP_LOGI(TAG, "%d", rxBuf[i]);
+            }
+        }
+
+		vTaskDelay(3000 / portTICK_RATE_MS);
 	}
 }
 
