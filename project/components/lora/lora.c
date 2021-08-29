@@ -225,12 +225,12 @@ void UpdateParams() {
 
     SendData((const char*) Params, sizeof(Params));
     rxBytes = uart_read_bytes(uart_num, rxData, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
-        if (rxBytes > 0) {
-            ESP_LOGI("UpdateParams", "Read %d bytes", rxBytes);
-            for (int i=0; i<=rxBytes-1; i++) {
-                printf("%x\r\n", rxData[i]);
-            }
+    if (rxBytes > 0) {
+        ESP_LOGI("UpdateParams", "Read %d bytes", rxBytes);
+        for (int i=0; i<=rxBytes-1; i++) {
+            printf("%x\r\n", rxData[i]);
         }
+    }
 }
 
 /*
@@ -242,5 +242,17 @@ void UpdateParams() {
  *      data: Data to send
  */
 void TransmitData(uint16_t target_addr, uint8_t target_ch, const char *data) {
+    uint8_t headerData[3];
+    uint8_t ADDR_H, ADDR_L;
+    ADDR_H = (target_addr >> 8) & 0xFF;
+    ADDR_L = target_addr & 0xFF;
 
+    headerData[0] = ADDR_H;
+    headerData[1] = ADDR_L;
+    headerData[2] = target_ch;
+
+    SendData((const char*) headerData, sizeof(headerData));
+    SendData(data, strlen(data)+1);
 }
+
+

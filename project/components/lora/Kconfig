@@ -1,0 +1,51 @@
+menu "LoRa Module Configuration"
+
+config M0_PIN
+    int "M0 Pin Number"
+    default 23
+    help
+        set the pin to be connected to M0 pin of LoRa module
+
+config M1_PIN
+    int "M1 Pin Number"
+    default 22
+    help
+        set the pin to be connected to M1 pin of LoRa module
+
+config AUX_PIN
+    int "AUX Pin Number"
+    default 21
+    help
+        set the pin to be connected to AUX pin of LoRa module
+
+config RX_DEVICE
+    bool "Receiver Device"
+    default n
+    help
+        If this feature is enabled, the device will act as the receiver node
+
+config TX_DEVICE_ADDR
+    hex "Transmitter Device Address"
+    default 0x0000
+    help
+        set the transmitter device address
+
+config TX_DEVICE_CH
+    hex "Transmitter Device Channel"
+    default 0x00
+    help
+        set the transmitter device channel
+
+config RX_DEVICE_ADDR
+    hex "Receiver Device Channel"
+    default 0xAAAA
+    help
+        set the receiver device channel
+
+config RX_DEVICE_CH
+    hex "Receiver Device Channel"
+    default 0x0F
+    help
+        set the receiver device channel
+
+endmenu

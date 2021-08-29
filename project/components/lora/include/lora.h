@@ -134,9 +134,14 @@ enum params {
 
 // Misc
 
-#define M0_PIN          23
-#define M1_PIN          22
-#define AUX_PIN         21
+#define M0_PIN          CONFIG_M0_PIN
+#define M1_PIN          CONFIG_M1_PIN
+#define AUX_PIN         CONFIG_AUX_PIN
+#define TX_DEVICE_ADDR  CONFIG_TX_DEVICE_ADDR
+#define TX_DEVICE_CH    CONFIG_TX_DEVICE_CH
+#define RX_DEVICE_ADDR  CONFIG_RX_DEVICE_ADDR
+#define RX_DEVICE_CH    CONFIG_RX_DEVICE_CH
+#define RX_DEVICE       CONFIG_RX_DEVICE
 #define RX_BUF_SIZE     2048
 #define TIME_OUT_CNT    100
 
@@ -155,6 +160,7 @@ void SetAddrCh(uint16_t, uint8_t);
 void SetSpeed(uint8_t, uint8_t, uint8_t);
 void SetOption(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t);
 void UpdateParams(void);
+void TransmitData(uint16_t, uint8_t, const char*);
 
 // Globals
 
