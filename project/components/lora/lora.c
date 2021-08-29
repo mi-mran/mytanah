@@ -19,16 +19,15 @@ uint8_t	RESET_MODULE[] = {0xC4,0xC4,0xC4};		// C4+C4+C4: Reset module
 // If not configured using the Set__ functions before sending, it will use default parameters.
 uint8_t Params[6] = {0xC0, 0x00, 0x00, 0x1A, 0x17, 0x44};
 
-
+// GPIO pins init
 void InitGPIO() {
-	// GPIO pins init
 	gpio_set_direction(M0_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(M1_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(AUX_PIN, GPIO_MODE_INPUT);
 }
 
+// UART pins init
 void InitUART() {
-    // UART pins init
     uart_config_t uart_config = {
             .baud_rate = 9600,
             .data_bits = UART_DATA_8_BITS,

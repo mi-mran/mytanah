@@ -13,7 +13,9 @@ void LoraTask(void *pvParameter) {
     uint8_t rxBuf[RX_BUF_SIZE+1];
     size_t rxData_len;
     int rxBytes;
+    int slen = 0;
     const char *txData = "Hello Device 2";
+    char *string;
 
     InitGPIO();
     InitUART();
@@ -36,11 +38,12 @@ void LoraTask(void *pvParameter) {
         uart_get_buffered_data_len(uart_num, &rxData_len);        
         if (rxData_len > 0) {
             rxBytes = uart_read_bytes(uart_num, rxBuf, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
-            char *string = (char *) malloc(rxBytes + 1);
-            int slen = 0;
+            string = (char *) malloc(rxBytes + 1);
+
             for (int i=0; i<rxBytes; i++) {
                 string[slen++] = rxBuf[i];
             }
+
             string[slen] = '\0';
             ESP_LOGI(TAG, "%s", string);
             free(string);
