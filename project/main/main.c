@@ -37,15 +37,18 @@ void LoraTask(void *pvParameter) {
 #if RX_DEVICE
         uart_get_buffered_data_len(uart_num, &rxData_len);        
         if (rxData_len > 0) {
+            slen = 0;
             rxBytes = uart_read_bytes(uart_num, rxBuf, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
-            string = (char *) malloc(rxBytes + 1);
+            string = (char *) malloc(rxBytes);
 
             for (int i=0; i<rxBytes; i++) {
                 string[slen++] = rxBuf[i];
             }
 
-            string[slen] = '\0';
+            ESP_LOGW(TAG, "%d bytes received", rxBytes);
+            ESP_LOGW(TAG, "%d string length", slen);
             ESP_LOGI(TAG, "%s", string);
+            memset(string, '0', strlen(string) * sizeof(char));
             free(string);
         }
 
