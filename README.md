@@ -4,9 +4,13 @@ Life, Lands, Livelihood Enriched.
 
 ## Todo
 
-- [x] Added example project to test building and flashing
-- [ ] Add example code for LoRa E32 transmitter and receiver (when adding code, please upload documentation of specific pinouts used)
-- [ ] Discuss network topology of transceiver system
+- [x] Add example project to test building and flashing
+- [x] Add example code for LoRa E32 transmitter and receiver (when adding code, please upload documentation of specific pinouts used)
+- [x] Add sleep wake feature
+- [ ] Retire E-Byte as LoRa module, we will use RFM95 module instead
+- [ ] Develop API to interface with sensor
+- [ ] Port existing LMIC library to ESP-IDF environment
+- [ ] Setup RPi gateway connected to ChirpStack
 
 ## Setup Environment
 
@@ -30,11 +34,16 @@ On Linux systems, you need to add your user to "dialout" permission group to acc
 	
 ## Build and Flash Project
 
+To set the device configurations, go to menuconfig >> Component config >> LoRa module configuration.
+You can also check/set pinout from there.
+	
+	cd project
+	idf.py menuconfig
+
 Ensure that you have already setup the environment properly before building the project.
 
 Build the project. "project/build" directory will be created/updated containing required build files:
 
-	cd project
 	idf.py set-target esp32
 	idf.py build
 	
@@ -44,4 +53,4 @@ Flash the project into ESP32-WROOM-32D. On some boards you may need to press boo
 	
 To view logs:
 
-	idf.py monitor
+	idf.py -p /dev/ttyUSB0 monitor
