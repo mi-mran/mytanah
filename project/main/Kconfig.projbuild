@@ -1,14 +1,33 @@
 # put here your custom config value
-menu "Example Configuration"
-config ESP_WIFI_SSID
-    string "WiFi SSID"
-    default "myssid"
+menu "MyTanah Project Configurations"
+config NPK_UART_PORT_NUM 
+    int "UART port number"
+    default 2
     help
-	SSID (network name) for the example to connect to.
+    UART port number
+	
+config NPK_UART_RXD
+    int "UART RXD pin number"
+    default 16
+    help
+    UART RXD pin number
 
-config ESP_WIFI_PASSWORD
-    string "WiFi Password"
-    default "mypassword"
+config NPK_UART_TXD
+    int "UART TXD pin number"
+    default 17
     help
-	WiFi password (WPA or WPA2) for the example to use.
+    UART TXD pin number
+
+config NPK_UART_RTS
+    int "UART RTS pin number"
+    default 7
+    help
+    UART RTS pin number
+
+config NPK_UART_BAUD_RATE
+    int "UART communication speed"
+    default 115200
+    help
+    UART Baud Rate
+
 endmenu
