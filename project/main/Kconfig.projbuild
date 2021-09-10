@@ -26,8 +26,8 @@ config NPK_UART_RTS
 
 config NPK_UART_BAUD_RATE
     int "UART communication speed"
-    default 115200
+    default 4800 
     help
-    UART Baud Rate
+    UART Baud Rate bps
 
 endmenu
