@@ -46,13 +46,14 @@ void npk_uart_init() {
 }
 
 void npk_get_data(uint8_t *rxBuf) {
-    //const uint8_t txBytes;
+    const uint8_t txBytes;
     //uint8_t rxBytes;
     size_t rxData_len;
 
     uart_set_rts(NPK_UART_PORT_NUM, 1);
-    //txBytes = uart_write_bytes(NPK_UART_PORT_NUM, (const char*) modbus_cmd, sizeof(modbus_cmd));
-    uart_write_bytes(NPK_UART_PORT_NUM, (const char*) modbus_cmd, sizeof(modbus_cmd));
+    txBytes = uart_write_bytes(NPK_UART_PORT_NUM, (const char*) modbus_cmd, sizeof(modbus_cmd));
+    if (txBytes == 8)   // need to double check this logic, need to move after read_bytes?
+        uart_set_rts(NPK_UART_PORT_NUM, 0);
 
     do {
         uart_get_buffered_data_len(NPK_UART_PORT_NUM, &rxData_len);
@@ -147,3 +148,5 @@ uint16_t npk_parse_pota(uint8_t *rxBuf) {
     pota = (pota_high << 8) | (pota_low);
     return pota;
 }
+
+// ToDo: CRC check
