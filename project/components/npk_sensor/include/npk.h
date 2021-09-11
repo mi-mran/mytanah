@@ -34,14 +34,24 @@
 #define NPK_ADDR_TDS            0x08
 
 // CRC
-#define CRC_LOW_BYTE            0x04
-#define CRC_HIGH_BYTE           0x08
+#define CRC_BYTE_LOW            0x04
+#define CRC_BYTE_HIGH           0x08
 
 // Modbus command to get moisture ... potassium
-const uint8_t modbus_cmd[] = {NPK_ADDR_CODE,NPK_FUNC_CODE, 0x00, 0x00, 0x00, 0x07, CRC_LOW_BYTE, CRC_HIGH_BYTE};
+const uint8_t modbus_cmd[] = {NPK_ADDR_CODE,NPK_FUNC_CODE, 0x00, 0x00, 0x00, 0x07, CRC_BYTE_LOW, CRC_BYTE_HIGH};
+
+// Others
+#define NPK_RX_BUF_SIZE         2048
 
 // Function declarations
 void npk_uart_init(void);
-int npk_send(const char*, int);
+void npk_get_data(uint8_t*);
+uint16_t npk_parse_moisture(uint8_t*);
+uint16_t npk_parse_temp(uint8_t*);
+uint16_t npk_parse_cond(uint8_t*);
+uint16_t npk_parse_ph(uint8_t*);
+uint16_t npk_parse_nitro(uint8_t*);
+uint16_t npk_parse_phos(uint8_t*);
+uint16_t npk_parse_pota(uint8_t*);
 
 #endif
