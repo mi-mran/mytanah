@@ -10,6 +10,9 @@
 
 #define TAG "RS485"
 
+// Modbus command to get moisture ... potassium
+const uint8_t modbus_cmd[] = {NPK_ADDR_CODE,NPK_FUNC_CODE, 0x00, 0x00, 0x00, 0x07, CRC_BYTE_LOW, CRC_BYTE_HIGH};
+
 void npk_uart_init() {
     uart_config_t uart_config = {
         .baud_rate = NPK_BAUD_RATE,
@@ -45,8 +48,8 @@ void npk_uart_init() {
     ESP_ERROR_CHECK(uart_set_rx_timeout(NPK_UART_PORT_NUM, NPK_READ_TOUT));
 }
 
-void npk_get_data(uint8_t *rxBuf) {
-    const uint8_t txBytes;
+void npk_get_data(uint8_t *rxBuf, uint16_t size) {
+    uint8_t txBytes;
     //uint8_t rxBytes;
     size_t rxData_len;
 
@@ -60,21 +63,21 @@ void npk_get_data(uint8_t *rxBuf) {
         vTaskDelay(300/portTICK_RATE_MS);
     } while (!(rxData_len > 0));
     
-   //rxBytes = uart_read_bytes(NPK_UART_PORT_NUM, rxBuf, NPK_RX_BUF_SIZE, 1000 / portTICK_RATE_MS); 
-   uart_read_bytes(NPK_UART_PORT_NUM, rxBuf, NPK_RX_BUF_SIZE, 1000 / portTICK_RATE_MS); 
+   //rxBytes = uart_read_bytes(NPK_UART_PORT_NUM, rxBuf, size, 1000 / portTICK_RATE_MS); 
+   uart_read_bytes(NPK_UART_PORT_NUM, rxBuf, size, 1000 / portTICK_RATE_MS); 
 }
 
 // ToDo: Check the units of returned value
-uint16_t npk_parse_moisture(uint8_t *rxBuf) {
-    uint8_t moisture_high;
-    uint8_t moisture_low;
-    uint16_t moisture;
+uint16_t npk_parse_moist(uint8_t *rxBuf) {
+    uint8_t moist_high;
+    uint8_t moist_low;
+    uint16_t moist;
 
-    moisture_high = rxBuf[3];
-    moisture_low = rxBuf[4];
+    moist_high = rxBuf[3];
+    moist_low = rxBuf[4];
 
-    moisture = (moisture_high << 8) | (moisture_low);
-    return moisture;
+    moist = (moist_high << 8) | (moist_low);
+    return moist;
 }
 
 uint16_t npk_parse_temp(uint8_t *rxBuf) {
@@ -118,8 +121,8 @@ uint16_t npk_parse_nitro(uint8_t *rxBuf) {
     uint8_t nitro_low;
     uint16_t nitro;
 
-    nitro_high = rxBuf[9];
-    nitro_low = rxBuf[10];
+    nitro_high = rxBuf[11];
+    nitro_low = rxBuf[12];
 
     nitro = (nitro_high << 8) | (nitro_low);
     return nitro;

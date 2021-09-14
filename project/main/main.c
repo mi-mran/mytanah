@@ -7,8 +7,13 @@
 #include "esp_log.h"
 #include "esp_sleep.h"
 #include "lora.h"
+#include "npk.h"
 
 static const char *TAG = "LORA TASK";
+
+TaskHandle_t lora_task_handle;
+TaskHandle_t npk_task_handle;
+QueueHandle_t data_queue;
 
 void LoraTask(void *pvParameter) {
     uint8_t rxBuf[RX_BUF_SIZE+1];
@@ -83,6 +88,28 @@ void LoraTask(void *pvParameter) {
     esp_deep_sleep_start();
 }
 
+void NPKTask(void *pvParameter) {
+    data_queue = xQueueCreate(10, sizeof(NPK_DATA));
+
+    uint8_t rxData[NPK_RX_BUF_SIZE];
+    npk_uart_init();
+    npk_get_data(rxData, sizeof(rxData));
+
+    NPK_DATA *sensor_data = (NPK_DATA*) pvPortMalloc(sizeof(NPK_DATA));
+    sensor_data->moist = npk_parse_moist(rxData);
+    sensor_data->temp = npk_parse_temp(rxData);
+    sensor_data->cond = npk_parse_cond(rxData);
+    sensor_data->ph = npk_parse_ph(rxData);
+    sensor_data->nitro = npk_parse_nitro(rxData);
+    sensor_data->phos = npk_parse_phos(rxData);
+    sensor_data->pota = npk_parse_pota(rxData);
+
+    // ToDo: Send data to queue
+
+    vPortFree((void*)sensor_data);
+}
+
 void app_main(void) {
-	xTaskCreate(&LoraTask, "LoraTask", 8192, NULL, 1, NULL);
+	xTaskCreate(&LoraTask, "LoraTask", 8192, NULL, 3, &lora_task_handle);
+	xTaskCreate(&NPKTask, "NPKTask", 8192, NULL, 3, &npk_task_handle);
 }
