@@ -90,9 +90,14 @@ void LoraTask(void *pvParameter) {
 
 void NPKTask(void *pvParameter) {
     data_queue = xQueueCreate(10, sizeof(NPK_DATA));
+    if (data_queue == NULL) {
+        ESP_LOGE(TAG, "Failed to create queue");
+    }
+
+    npk_uart_init();
 
     uint8_t rxData[NPK_RX_BUF_SIZE];
-    npk_uart_init();
+    memset(rxData, 0, sizeof(rxData));
     npk_get_data(rxData, sizeof(rxData));
 
     NPK_DATA *sensor_data = (NPK_DATA*) pvPortMalloc(sizeof(NPK_DATA));
@@ -104,12 +109,21 @@ void NPKTask(void *pvParameter) {
     sensor_data->phos = npk_parse_phos(rxData);
     sensor_data->pota = npk_parse_pota(rxData);
 
-    // ToDo: Send data to queue
+    if (xQueueSend(data_queue, sensor_data, portMAX_DELAY) == pdPASS) {
+        ESP_LOGI(TAG, "Sent data to queue successfully");
+    }
+    else {
+        ESP_LOGE(TAG, "Failed to send data to queue");
+    }
 
     vPortFree((void*)sensor_data);
+
+    // TBC, may need to unblock LoraTask from ISR when queue is not empty
+    vTaskSuspend(NULL);
 }
 
 void app_main(void) {
+    // Task priority TBC
 	xTaskCreate(&LoraTask, "LoraTask", 8192, NULL, 3, &lora_task_handle);
-	xTaskCreate(&NPKTask, "NPKTask", 8192, NULL, 3, &npk_task_handle);
+	xTaskCreate(&NPKTask, "NPKTask", 8192, NULL, 5, &npk_task_handle);
 }
