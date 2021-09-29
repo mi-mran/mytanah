@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // UART port and pin numbers
 #define NPK_UART_PORT_NUM          (CONFIG_NPK_UART_PORT_NUM)
 #define NPK_UART_TXD               (CONFIG_NPK_UART_TXD)
@@ -64,4 +68,9 @@ typedef struct {
 
 // Globals
 extern const uint8_t modbus_cmd[];
-#endif
+
+#ifdef __cplusplus
+} // extern "C"
+#endif 
+
+#endif // NPK_H_
