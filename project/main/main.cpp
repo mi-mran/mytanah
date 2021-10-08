@@ -1,106 +1,50 @@
 #include <stdio.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_sleep.h"
-#include "lora.h"
+#include "lmic.h"
 #include "npk.h"
 
-static const char *TAG = "LORA TASK";
+// TODO: Change APPEUI, DEVEUI, APPKEY to our own keys
 
-TaskHandle_t lora_task_handle;
-TaskHandle_t npk_task_handle;
-QueueHandle_t data_queue;
+/*
+ * This EUI must be in little-endian format, so least-significant-byte
+ * first. When copying an EUI from ttnctl output, this means to reverse
+ * the bytes. For TTN issued EUIs the last bytes should be 0xD5, 0xB3,
+ * 0x70.
+ */
+static const u1_t APPEUI[8]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+void os_getArtEui (u1_t* buf) { memcpy(buf, APPEUI, 8);}
 
-void LoraTask(void *pvParameter) {
-    uint8_t rxBuf[RX_BUF_SIZE+1];
-    size_t rxData_len;
-    int rxBytes;
-    int slen = 0;
-    const char *txData = "Hello Device 2"; char *string;
+// This should also be in little endian format, see above.
+static const u1_t DEVEUI[8]={ 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+void os_getDevEui (u1_t* buf) { memcpy(buf, DEVEUI, 8);}
 
-    InitGPIO();
-    InitUART();
+/*
+ * This key should be in big endian format (or, since it is not really a
+ * number but a block of memory, endianness does not really apply). In
+ * practice, a key taken from ttnctl can be copied as-is.
+ * The key shown here is the semtech default key.
+ */
+static const u1_t APPKEY[16] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
+void os_getDevKey (u1_t* buf) {  memcpy(buf, APPKEY, 16);}
 
-    SetHead(CMD_CFG_SAVE);
-    SetOption(0x01, 0x01, 0x00, 0x01, 0x00);
-#if RX_DEVICE
-    SetAddrCh(RX_DEVICE_ADDR, RX_DEVICE_CH);
-#else
-    SetAddrCh(TX_DEVICE_ADDR, TX_DEVICE_CH);
-#endif
-    
-    ChangeMode(MODE_3_SLEEP);
-    CheckParams();
-    UpdateParams();
-    ChangeMode(MODE_0_NORMAL);
-                
-#if RX_DEVICE
-    uart_get_buffered_data_len(uart_num, &rxData_len);        
-    if (rxData_len > 0) {
-        slen = 0;
-        rxBytes = uart_read_bytes(uart_num, rxBuf, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
-        string = (char *) malloc(rxBytes);
+static const char *TAG = "[SendData]";
+static const char *EV_TAG = "[Event]";
 
-        for (int i=0; i<rxBytes; i++) {
-            string[slen++] = rxBuf[i];
-        }
+static osjob_t SendDataJob;
 
-        ESP_LOGW(TAG, "%d bytes received", rxBytes);
-        ESP_LOGW(TAG, "%d string length", slen);
-        ESP_LOGI(TAG, "%s", string);
-        memset(string, '0', strlen(string) * sizeof(char));
-        free(string);
-    }
-
-    TransmitData(RX_DEVICE_ADDR, RX_DEVICE_CH, txData);
-
-    esp_sleep_enable_ext0_wakeup(AUX_PIN, 0);   // wakeup when AUX_PIN low
-
-#else
-    TransmitData(RX_DEVICE_ADDR, RX_DEVICE_CH, txData);
-
-    uart_get_buffered_data_len(uart_num, &rxData_len);
-    while (rxData_len == 0);
-
-    if (rxData_len > 0) {
-        slen = 0;
-        rxBytes = uart_read_bytes(uart_num, rxBuf, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
-        string = (char *) malloc(rxBytes);
-
-        for (int i=0; i<rxBytes; i++) {
-            string[slen++] = rxBuf[i];
-        }
-
-        ESP_LOGW(TAG, "%d bytes received", rxBytes);
-        ESP_LOGW(TAG, "%d string length", slen);
-        ESP_LOGI(TAG, "%s", string);
-        memset(string, '0', strlen(string) * sizeof(char));
-        free(string);
-    }
-
-#endif
-    esp_sleep_enable_timer_wakeup(10 * 1000000);
-    ESP_LOGI(TAG, "Entering deep sleep");
-    esp_deep_sleep_start();
-}
-
-void NPKTask(void *pvParameter) {
-    data_queue = xQueueCreate(10, sizeof(NPK_DATA));
-    if (data_queue == NULL) {
-        ESP_LOGE(TAG, "Failed to create queue");
-    }
-
+void SendData(osjob_t* SendDataJob) {
     npk_uart_init();
 
     uint8_t rxData[NPK_RX_BUF_SIZE];
     memset(rxData, 0, sizeof(rxData));
     npk_get_data(rxData, sizeof(rxData));
 
-    NPK_DATA *sensor_data = (NPK_DATA*) pvPortMalloc(sizeof(NPK_DATA));
+    // Data to send
+    NPK_DATA *sensor_data = (NPK_DATA*) malloc(sizeof(NPK_DATA));
     sensor_data->moist = npk_parse_moist(rxData);
     sensor_data->temp = npk_parse_temp(rxData);
     sensor_data->cond = npk_parse_cond(rxData);
@@ -109,21 +53,97 @@ void NPKTask(void *pvParameter) {
     sensor_data->phos = npk_parse_phos(rxData);
     sensor_data->pota = npk_parse_pota(rxData);
 
-    if (xQueueSend(data_queue, sensor_data, portMAX_DELAY) == pdPASS) {
-        ESP_LOGI(TAG, "Sent data to queue successfully");
-    }
+    // Check if there is a current TX/RX job running
+    if (LMIC.opmode & OP_TXRXPEND)
+        ESP_LOGI(TAG, "There is a TX/RX job running, cancelling transmission");
     else {
-        ESP_LOGE(TAG, "Failed to send data to queue");
+        // Prepare upstream data tx at the next possible time
+        // TODO: Check the type-casting
+        // TODO: Check which port to send
+        LMIC_setTxData2(1, (uint8_t*) sensor_data, sizeof(sensor_data), 0);
+        ESP_LOGI(TAG, "Packet queued");
     }
 
-    vPortFree((void*)sensor_data);
+    free(sensor_data);
+}
 
-    // TBC, may need to unblock LoraTask from ISR when queue is not empty
-    vTaskSuspend(NULL);
+void onEvent (ev_t ev) {
+    ESP_LOGI(EV_TAG, "systick: %d", os_getTime());
+    switch(ev) {
+        case EV_SCAN_TIMEOUT:
+            ESP_LOGI(EV_TAG, "EV_SCAN_TIMEOUT");
+            break;
+        case EV_BEACON_FOUND:
+            ESP_LOGI(EV_TAG, "EV_BEACON_FOUND");
+            break;
+        case EV_BEACON_MISSED:
+            ESP_LOGI(EV_TAG, "EV_BEACON_MISSED");
+            break;
+        case EV_BEACON_TRACKED:
+            ESP_LOGI(EV_TAG, "EV_BEACON_TRACKED");
+            break;
+        case EV_JOINING:
+            ESP_LOGI(EV_TAG, "EV_JOINING");
+            break;
+        case EV_JOINED:
+            ESP_LOGI(EV_TAG, "EV_JOINED");
+            // Disable link check validation (automatically enabled
+            // during join, but not supported by TTN at this time).
+            LMIC_setLinkCheckMode(0);
+            break;
+        case EV_RFU1:
+            ESP_LOGI(EV_TAG, "EV_RFU1");
+            break;
+        case EV_JOIN_FAILED:
+            ESP_LOGI(EV_TAG, "EV_JOIN_FAILED");
+            break;
+        case EV_REJOIN_FAILED:
+            ESP_LOGI(EV_TAG, "EV_REJOIN_FAILED");
+            break;
+        case EV_TXCOMPLETE:
+            ESP_LOGI(EV_TAG, "EV_TXCOMPLETE (includes waiting for RX windows)");
+            if (LMIC.txrxFlags & TXRX_ACK)
+              ESP_LOGI(EV_TAG, "Received ack");
+            if (LMIC.dataLen) {
+              ESP_LOGI(EV_TAG, "Received ");
+              ESP_LOGI(EV_TAG, "%d", LMIC.dataLen);
+              ESP_LOGI(EV_TAG, " bytes of payload");
+            }
+            // Schedule next transmission every 60 seconds
+            // TODO: Set correct transmission interval
+            os_setTimedCallback(&SendDataJob, os_getTime()+sec2osticks(60), SendData);
+            break;
+        case EV_LOST_TSYNC:
+            ESP_LOGI(EV_TAG, "EV_LOST_TSYNC");
+            break;
+        case EV_RESET:
+            ESP_LOGI(EV_TAG, "EV_RESET");
+            break;
+        case EV_RXCOMPLETE:
+            // data received in ping slot
+            ESP_LOGI(EV_TAG, "EV_RXCOMPLETE");
+            break;
+        case EV_LINK_DEAD:
+            ESP_LOGI(EV_TAG, "EV_LINK_DEAD");
+            break;
+        case EV_LINK_ALIVE:
+            ESP_LOGI(EV_TAG, "EV_LINK_ALIVE");
+            break;
+         default:
+            ESP_LOGI(EV_TAG, "Unknown event");
+            break;
+    }
 }
 
 void app_main(void) {
-    // Task priority TBC
-	xTaskCreate(&LoraTask, "LoraTask", 8192, NULL, 3, &lora_task_handle);
-	xTaskCreate(&NPKTask, "NPKTask", 8192, NULL, 5, &npk_task_handle);
+    npk_uart_init();
+
+    // LMIC Init
+    os_init();
+
+    // Reset the MAC state. Session and pending data transfers will be discarded
+    LMIC_reset();
+
+    // Start SendData (Sending automatically starts OTAA too)
+    SendData(&SendDataJob);
 }
