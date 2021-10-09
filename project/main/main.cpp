@@ -7,6 +7,17 @@
 #include "lmic.h"
 #include "npk.h"
 
+extern "C" {void app_main(void);}
+
+// Pin mapping
+// TODO: Change the pin mapping
+lmic_pinmap lmic_pins = {
+    .nss = 6,
+    .rxtx = LMIC_UNUSED_PIN,
+    .rst = 5,
+    .dio = {2, 3, 4},
+};
+
 // TODO: Change APPEUI, DEVEUI, APPKEY to our own keys
 
 /*
@@ -15,6 +26,7 @@
  * the bytes. For TTN issued EUIs the last bytes should be 0xD5, 0xB3,
  * 0x70.
  */
+
 static const u1_t APPEUI[8]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 void os_getArtEui (u1_t* buf) { memcpy(buf, APPEUI, 8);}
 
@@ -144,6 +156,14 @@ void app_main(void) {
     // Reset the MAC state. Session and pending data transfers will be discarded
     LMIC_reset();
 
+    // Disable link check validation
+    LMIC_setLinkCheckMode(0);
+
     // Start SendData (Sending automatically starts OTAA too)
     SendData(&SendDataJob);
+
+    while(1) {
+        os_runloop_once();
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
 }
