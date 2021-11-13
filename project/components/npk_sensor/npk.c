@@ -61,24 +61,22 @@ void npk_get_data(uint8_t *rxBuf, uint16_t size) {
     gpio_set_level(18, 1);
     txBytes = uart_write_bytes(NPK_UART_PORT_NUM, (const char*) modbus_cmd, sizeof(modbus_cmd));
 
-    if (txBytes == 8) {   // need to double check this logic, need to move after read_bytes?
+    if (txBytes == 8) {
         uart_set_rts(NPK_UART_PORT_NUM, 0);
         gpio_set_level(18, 0);
     }
 
-#if 1
+    // wait until cache is not empty
     do {
         uart_get_buffered_data_len(NPK_UART_PORT_NUM, &rxData_len);
         ESP_LOGW("DEBUG", "len: %d", rxData_len);
         vTaskDelay(300/portTICK_RATE_MS);
     } while (!(rxData_len > 0));
-#endif
     
     //rxBytes = uart_read_bytes(NPK_UART_PORT_NUM, rxBuf, size, 1000 / portTICK_RATE_MS); 
     uart_read_bytes(NPK_UART_PORT_NUM, rxBuf, size, 1000 / portTICK_RATE_MS); 
 }
 
-// ToDo: Check the units of returned value
 uint16_t npk_parse_moist(uint8_t *rxBuf) {
     uint8_t moist_high;
     uint8_t moist_low;
@@ -100,6 +98,7 @@ uint16_t npk_parse_temp(uint8_t *rxBuf) {
     temp_low = rxBuf[6];
 
     temp = (temp_high << 8) | (temp_low);
+    temp /= 10;
     return temp;
 }
 
@@ -124,6 +123,7 @@ uint16_t npk_parse_ph(uint8_t *rxBuf) {
     ph_low = rxBuf[10];
 
     ph = (ph_high << 8) | (ph_low);
+    ph /= 10;
     return ph;
 }
 
@@ -163,4 +163,4 @@ uint16_t npk_parse_pota(uint8_t *rxBuf) {
     return pota;
 }
 
-// ToDo: CRC check
+// TODO: CRC check
