@@ -7,10 +7,12 @@ Life, Lands, Livelihood Enriched.
 - [x] Add example project to test building and flashing
 - [x] Add example code for LoRa E32 transmitter and receiver (when adding code, please upload documentation of specific pinouts used)
 - [x] Add sleep wake feature
-- [x] Retire E-Byte as LoRa module, we will use RFM95 module instead
-- [ ] Develop API to interface with sensor
+- [ ] Retire E-Byte as LoRa module, we will use RFM95 module instead
+- [x] Develop API to interface with sensor
 - [x] Port existing LMIC library to ESP-IDF environment
-- [ ] Setup RPi gateway connected to ChirpStack
+- [x] Setup RPi gateway connected to ChirpStack
+- [ ] Join ChirpStack Network via OTAA/APB
+- [ ] Setup external Postgres to be exposed to application
 
 ## Setup Environment
 
