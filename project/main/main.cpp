@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <string.h>
+#include <cstring>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
@@ -11,7 +11,6 @@
 #include "TheThingsNetwork.h"
 
 static const char *NPK_TAG = "NPK TASK";
-//static const char *LORA_TAG = "LORA TASK";
 
 // AppEUI (sometimes called JoinEUI)
 const char *appEui = "0000000000000000";
@@ -33,14 +32,14 @@ const char *appKey = "74030c3db58941f9d79423195588c4e1";
 #define TTN_PIN_DIO1      35
 
 static TheThingsNetwork ttn;
-const unsigned TX_INTERVAL = 30;
+const unsigned TX_INTERVAL = 60;
 
 TaskHandle_t npk_task_handle;
 
-void sendMessage(NPK_DATA* data)
+void sendMessage(uint8_t* data)
 {
     printf("Sending message...\n");
-    TTNResponseCode res = ttn.transmitMessage((uint8_t*) data, sizeof(data) - 1);
+    TTNResponseCode res = ttn.transmitMessage((uint8_t*) data, strlen((const char*) data));
     printf(res == kTTNSuccessfulTransmission ? "Message sent.\n" : "Transmission failed.\n");
 }
 
@@ -61,6 +60,9 @@ void NPKTask(void *pvParameter) {
     while (1) {
         memset(rxData, 0, sizeof(rxData));
         npk_get_data(rxData, sizeof(rxData));
+
+        uint8_t msgData[200] = {0};
+
         NPK_DATA *sensor_data = (NPK_DATA*) pvPortMalloc(sizeof(NPK_DATA));
         // TODO: Error checking improvement
         if (sensor_data != NULL)
@@ -83,7 +85,20 @@ void NPKTask(void *pvParameter) {
         ESP_LOGI(NPK_TAG, "Phosphorus: %d", sensor_data->phos);
         ESP_LOGI(NPK_TAG, "Potassium: %d", sensor_data->pota);
 
-        sendMessage(sensor_data);
+        sprintf((char*)msgData, 
+                "{\"Moisure\":%d,\"Temperature\":%d,\"Conductivity\":%d,\"PH\":%d,\"Nitrogen\":%d,\"Phosphorus\":%d,\"Potassium\":%d}",
+                sensor_data->moist,
+                sensor_data->temp,
+                sensor_data->cond,
+                sensor_data->ph,
+                sensor_data->nitro,
+                sensor_data->phos,
+                sensor_data->pota
+               );
+
+        ESP_LOGI(NPK_TAG, "%s", msgData);
+
+        sendMessage(msgData);
         vPortFree((void*)sensor_data);
         vTaskDelay(TX_INTERVAL * pdMS_TO_TICKS(1000));
     }
