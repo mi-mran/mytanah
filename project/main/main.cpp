@@ -15,9 +15,9 @@ static const char *NPK_TAG = "NPK TASK";
 // AppEUI (sometimes called JoinEUI)
 const char *appEui = "0000000000000000";
 // DevEUI
-const char *devEui = "d5d8021885ff8b33";
+const char *devEui = "9a1a434b67aef782";
 // AppKey
-const char *appKey = "74030c3db58941f9d79423195588c4e1";
+const char *appKey = "3fc6b6b39a4744b72517fa5376c5a947";
 
 // Pins and other resources
 #define TTN_SPI_HOST      HSPI_HOST
@@ -86,7 +86,7 @@ void NPKTask(void *pvParameter) {
         ESP_LOGI(NPK_TAG, "Potassium: %d", sensor_data->pota);
 
         sprintf((char*)msgData, 
-                "{\"Moisure\":%d,\"Temperature\":%d,\"Conductivity\":%d,\"PH\":%d,\"Nitrogen\":%d,\"Phosphorus\":%d,\"Potassium\":%d}",
+                "{\"Moisture\":%d,\"Temperature\":%d,\"Conductivity\":%d,\"PH\":%d,\"Nitrogen\":%d,\"Phosphorus\":%d,\"Potassium\":%d}",
                 sensor_data->moist,
                 sensor_data->temp,
                 sensor_data->cond,
