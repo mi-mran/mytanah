@@ -67,7 +67,7 @@ typedef struct {
 } NPK_DATA;
 
 // Globals
-extern const uint8_t modbus_cmd[];
+extern uint8_t modbus_cmd[];
 
 #ifdef __cplusplus
 } // extern "C"
